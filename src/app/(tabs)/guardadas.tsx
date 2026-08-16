@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -13,17 +14,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CategoryPicker } from '@/components/CategoryPicker';
+import { EditAffirmationModal } from '@/components/EditAffirmationModal';
 import { GradientBackground } from '@/components/GradientBackground';
 import { CATEGORIES } from '@/data/affirmations';
 import { useSavedAffirmations } from '@/context/SavedAffirmationsContext';
+import { useTheme } from '@/context/ThemeContext';
 import { COLORS } from '@/theme/colors';
-import { FONTS } from '@/theme/fonts';
 import type { Category, SavedAffirmation } from '@/types';
 
+type CategoryFilter = 'all' | Category;
+
 export default function GuardadasScreen() {
-  const { saved, addAffirmation, removeAffirmation } = useSavedAffirmations();
+  const { saved, addAffirmation, removeAffirmation, editAffirmation } = useSavedAffirmations();
+  const { fonts } = useTheme();
   const [text, setText] = useState('');
   const [category, setCategory] = useState<Category>('amor');
+  const [query, setQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+  const [editingItem, setEditingItem] = useState<SavedAffirmation | null>(null);
 
   const handleSave = () => {
     if (!text.trim()) return;
@@ -31,13 +39,24 @@ export default function GuardadasScreen() {
     setText('');
   };
 
+  const filtered = useMemo(
+    () =>
+      saved.filter((item) => {
+        const matchesQuery =
+          query.trim() === '' || item.text.toLowerCase().includes(query.trim().toLowerCase());
+        const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+        return matchesQuery && matchesCategory;
+      }),
+    [saved, query, categoryFilter]
+  );
+
   return (
     <GradientBackground>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <SafeAreaView style={styles.safeArea}>
-          <Text style={styles.heading}>Guardadas</Text>
+          <Text style={[styles.heading, { fontFamily: fonts.serifSemiBold }]}>Guardadas</Text>
 
           <View style={styles.form}>
             <TextInput
@@ -54,44 +73,123 @@ export default function GuardadasScreen() {
             </TouchableOpacity>
           </View>
 
+          <View style={styles.searchRow}>
+            <Ionicons name="search" size={16} color={COLORS.textMuted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Buscar en tus guardadas..."
+              placeholderTextColor={COLORS.textMuted}
+              style={styles.searchInput}
+            />
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}>
+            <FilterChip
+              label="Todas"
+              active={categoryFilter === 'all'}
+              onPress={() => setCategoryFilter('all')}
+            />
+            {CATEGORIES.map((c) => (
+              <FilterChip
+                key={c.key}
+                label={c.label}
+                active={categoryFilter === c.key}
+                onPress={() => setCategoryFilter(c.key)}
+              />
+            ))}
+          </ScrollView>
+
           <FlatList
-            data={saved}
+            data={filtered}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
-              <Text style={styles.emptyText}>Todavía no guardaste ninguna afirmación propia.</Text>
+              <Text style={styles.emptyText}>
+                {saved.length === 0
+                  ? "Todavía no guardaste ninguna afirmación. Tocá el corazón en 'Hoy' o escribí la tuya acá."
+                  : 'No encontramos afirmaciones que coincidan con tu búsqueda.'}
+              </Text>
             }
             renderItem={({ item }) => (
-              <SavedItem item={item} onDelete={() => removeAffirmation(item.id)} />
+              <SavedItem
+                item={item}
+                onDelete={() => removeAffirmation(item.id)}
+                onEdit={() => setEditingItem(item)}
+              />
             )}
           />
         </SafeAreaView>
       </KeyboardAvoidingView>
+
+      <EditAffirmationModal
+        item={editingItem}
+        onSave={(id, newText, newCategory) => editAffirmation(id, newText, newCategory)}
+        onClose={() => setEditingItem(null)}
+      />
     </GradientBackground>
   );
 }
 
-function SavedItem({ item, onDelete }: { item: SavedAffirmation; onDelete: () => void }) {
+function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[styles.filterChip, active && styles.filterChipActive]}
+      activeOpacity={0.8}>
+      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function SavedItem({
+  item,
+  onDelete,
+  onEdit,
+}: {
+  item: SavedAffirmation;
+  onDelete: () => void;
+  onEdit: () => void;
+}) {
   const categoryInfo = CATEGORIES.find((c) => c.key === item.category);
   return (
-    <View style={styles.item}>
+    <TouchableOpacity style={styles.item} onPress={onEdit} activeOpacity={0.8}>
       <View style={styles.itemTextWrapper}>
-        {categoryInfo && (
+        <View style={styles.tagsRow}>
+          {categoryInfo && (
+            <View style={styles.itemTag}>
+              <Ionicons
+                name={categoryInfo.icon as keyof typeof Ionicons.glyphMap}
+                size={12}
+                color={COLORS.gold}
+              />
+              <Text style={styles.itemTagText}>{categoryInfo.label}</Text>
+            </View>
+          )}
           <View style={styles.itemTag}>
             <Ionicons
-            name={categoryInfo.icon as keyof typeof Ionicons.glyphMap}
-            size={12}
-            color={COLORS.gold}
-          />
-            <Text style={styles.itemTagText}>{categoryInfo.label}</Text>
+              name={item.origin === 'favorite' ? 'heart' : 'create-outline'}
+              size={12}
+              color={item.origin === 'favorite' ? COLORS.gold : COLORS.textMuted}
+            />
+            <Text
+              style={[
+                styles.itemTagText,
+                item.origin !== 'favorite' && { color: COLORS.textMuted },
+              ]}>
+              {item.origin === 'favorite' ? 'Favorita' : 'Propia'}
+            </Text>
           </View>
-        )}
+        </View>
         <Text style={styles.itemText}>{item.text}</Text>
       </View>
       <TouchableOpacity onPress={onDelete} hitSlop={10}>
         <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -103,7 +201,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   heading: {
-    fontFamily: FONTS.serifSemiBold,
     fontSize: 30,
     color: COLORS.textLight,
     marginBottom: 16,
@@ -132,6 +229,42 @@ const styles = StyleSheet.create({
     color: COLORS.chipActiveText,
     fontWeight: '700',
   },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.chipInactiveBg,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.textLight,
+    fontSize: 14,
+    paddingVertical: 10,
+  },
+  filterRow: {
+    gap: 8,
+    paddingBottom: 12,
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: COLORS.chipInactiveBg,
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.chipActiveBg,
+  },
+  filterChipText: {
+    color: COLORS.textLight,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  filterChipTextActive: {
+    color: COLORS.chipActiveText,
+  },
   listContent: {
     gap: 10,
     paddingBottom: 24,
@@ -154,6 +287,10 @@ const styles = StyleSheet.create({
   itemTextWrapper: {
     flex: 1,
     gap: 6,
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
   itemTag: {
     flexDirection: 'row',

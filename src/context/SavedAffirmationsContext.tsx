@@ -12,6 +12,9 @@ interface SavedAffirmationsContextValue {
   loading: boolean;
   addAffirmation: (text: string, category: Category) => Promise<void>;
   removeAffirmation: (id: string) => Promise<void>;
+  editAffirmation: (id: string, text: string, category: Category) => Promise<void>;
+  toggleFavorite: (text: string, category: Category) => Promise<void>;
+  isSaved: (text: string, category: Category) => boolean;
 }
 
 const SavedAffirmationsContext = createContext<SavedAffirmationsContextValue | null>(null);
@@ -30,7 +33,7 @@ export function SavedAffirmationsProvider({ children }: { children: React.ReactN
   const addAffirmation = useCallback(async (text: string, category: Category) => {
     if (!text.trim()) return;
     setSaved((current) => {
-      const next = [createSavedAffirmation(text, category), ...current];
+      const next = [createSavedAffirmation(text, category, 'custom'), ...current];
       persistSavedAffirmations(next);
       return next;
     });
@@ -44,8 +47,47 @@ export function SavedAffirmationsProvider({ children }: { children: React.ReactN
     });
   }, []);
 
+  const editAffirmation = useCallback(async (id: string, text: string, category: Category) => {
+    if (!text.trim()) return;
+    setSaved((current) => {
+      const next = current.map((item) =>
+        item.id === id ? { ...item, text: text.trim(), category } : item
+      );
+      persistSavedAffirmations(next);
+      return next;
+    });
+  }, []);
+
+  const toggleFavorite = useCallback(async (text: string, category: Category) => {
+    const trimmed = text.trim();
+    setSaved((current) => {
+      const existingFavorite = current.find(
+        (item) => item.origin === 'favorite' && item.text === trimmed && item.category === category
+      );
+      if (existingFavorite) {
+        const next = current.filter((item) => item.id !== existingFavorite.id);
+        persistSavedAffirmations(next);
+        return next;
+      }
+      const alreadySaved = current.some((item) => item.text === trimmed && item.category === category);
+      if (alreadySaved) return current;
+      const next = [createSavedAffirmation(trimmed, category, 'favorite'), ...current];
+      persistSavedAffirmations(next);
+      return next;
+    });
+  }, []);
+
+  const isSaved = useCallback(
+    (text: string, category: Category) => {
+      const trimmed = text.trim();
+      return saved.some((item) => item.text === trimmed && item.category === category);
+    },
+    [saved]
+  );
+
   return (
-    <SavedAffirmationsContext.Provider value={{ saved, loading, addAffirmation, removeAffirmation }}>
+    <SavedAffirmationsContext.Provider
+      value={{ saved, loading, addAffirmation, removeAffirmation, editAffirmation, toggleFavorite, isSaved }}>
       {children}
     </SavedAffirmationsContext.Provider>
   );

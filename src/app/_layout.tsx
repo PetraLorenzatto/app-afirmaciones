@@ -3,8 +3,11 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
+import { JournalProvider } from '@/context/JournalContext';
 import { SavedAffirmationsProvider } from '@/context/SavedAffirmationsContext';
 import { SettingsProvider } from '@/context/SettingsContext';
+import { StreakProvider } from '@/context/StreakContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { SUNRISE_GRADIENT } from '@/theme/colors';
 import { useAppFonts } from '@/theme/fonts';
 
@@ -26,10 +29,16 @@ export default function RootLayout() {
   return (
     <SavedAffirmationsProvider>
       <SettingsProvider>
-        <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: SUNRISE_GRADIENT[0] } }}>
-          <Stack.Screen name="(tabs)" />
-        </Stack>
+        <ThemeProvider>
+          <StreakProvider>
+            <JournalProvider>
+              <StatusBar style="light" />
+              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: SUNRISE_GRADIENT[0] } }}>
+                <Stack.Screen name="(tabs)" />
+              </Stack>
+            </JournalProvider>
+          </StreakProvider>
+        </ThemeProvider>
       </SettingsProvider>
     </SavedAffirmationsProvider>
   );

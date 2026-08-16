@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity } from 'react-native';
 
 import { CATEGORIES } from '@/data/affirmations';
+import { useTheme } from '@/context/ThemeContext';
 import { COLORS } from '@/theme/colors';
-import { FONTS } from '@/theme/fonts';
 import type { Category } from '@/types';
 
 export function CategoryMenu({
@@ -17,11 +17,12 @@ export function CategoryMenu({
   onSelect: (category: Category) => void;
   onClose: () => void;
 }) {
+  const { fonts } = useTheme();
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.sheet}>
-          <Text style={styles.title}>Elegí una categoría</Text>
+          <Text style={[styles.title, { fontFamily: fonts.serifSemiBold }]}>Elegí una categoría</Text>
           {CATEGORIES.map((category) => {
             const isActive = category.key === selected;
             return (
@@ -63,7 +64,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontFamily: FONTS.serifSemiBold,
     fontSize: 20,
     color: COLORS.textLight,
     marginBottom: 8,

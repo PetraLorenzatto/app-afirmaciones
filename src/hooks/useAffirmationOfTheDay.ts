@@ -4,8 +4,16 @@ import { AFFIRMATIONS } from '@/data/affirmations';
 import type { Category, SavedAffirmation } from '@/types';
 
 export function getCombinedAffirmations(category: Category, saved: SavedAffirmation[]): string[] {
-  const custom = saved.filter((item) => item.category === category).map((item) => item.text);
-  return [...AFFIRMATIONS[category], ...custom];
+  const base = AFFIRMATIONS[category];
+  const seen = new Set(base);
+  const extra: string[] = [];
+  for (const item of saved) {
+    if (item.category !== category) continue;
+    if (seen.has(item.text)) continue;
+    seen.add(item.text);
+    extra.push(item.text);
+  }
+  return [...base, ...extra];
 }
 
 function dayOfYear(date: Date): number {
