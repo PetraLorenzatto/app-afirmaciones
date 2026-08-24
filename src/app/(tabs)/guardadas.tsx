@@ -86,6 +86,7 @@ export default function GuardadasScreen() {
 
           <ScrollView
             horizontal
+            style={styles.filterScroll}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterRow}>
             <FilterChip
@@ -243,6 +244,9 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     fontSize: 14,
     paddingVertical: 10,
+  },
+  filterScroll: {
+    flexGrow: 0,
   },
   filterRow: {
     gap: 8,
