@@ -14,6 +14,7 @@ export function createDefaultUserProfile(): UserProfile {
     goals: [],
     currentNeed: null,
     tone: null,
+    supportTimes: [],
     onboardingCompleted: false,
     createdAt: DEFAULT_CREATED_AT,
   };

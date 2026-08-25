@@ -5,11 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GradientBackground } from '@/components/GradientBackground';
 import { useTheme } from '@/context/ThemeContext';
+import { useUserProfile } from '@/context/UserProfileContext';
 import { COLORS } from '@/theme/colors';
 
 export default function PerfilScreen() {
   const router = useRouter();
   const { fonts } = useTheme();
+  const { resetProfile } = useUserProfile();
 
   return (
     <GradientBackground>
@@ -30,6 +32,23 @@ export default function PerfilScreen() {
             <Text style={styles.rowSubtitle}>Notificaciones, fondo y tipografía.</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+        </TouchableOpacity>
+
+        <Text style={styles.sectionLabel}>Desarrollo (temporal)</Text>
+
+        <TouchableOpacity
+          style={[styles.row, styles.devRow]}
+          onPress={() => resetProfile()}
+          activeOpacity={0.85}>
+          <View style={[styles.rowIcon, styles.devRowIcon]}>
+            <Ionicons name="refresh-outline" size={18} color={COLORS.textLight} />
+          </View>
+          <View style={styles.rowTextWrapper}>
+            <Text style={styles.rowTitle}>Reiniciar onboarding</Text>
+            <Text style={styles.rowSubtitle}>
+              Herramienta de desarrollo: borra el perfil guardado y vuelve a mostrar el onboarding.
+            </Text>
+          </View>
         </TouchableOpacity>
       </SafeAreaView>
     </GradientBackground>
@@ -53,6 +72,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginTop: 24,
     marginBottom: 10,
   },
   row: {
@@ -70,6 +90,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.chipActiveBg,
+  },
+  devRow: {
+    borderWidth: 1,
+    borderColor: COLORS.danger,
+    backgroundColor: 'transparent',
+  },
+  devRowIcon: {
+    backgroundColor: COLORS.danger,
   },
   rowTextWrapper: {
     flex: 1,

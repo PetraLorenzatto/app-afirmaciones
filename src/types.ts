@@ -77,11 +77,14 @@ export type CurrentNeed =
 
 export type SupportTone = 'suave' | 'positiva' | 'directa' | 'reflexiva';
 
+export type SupportTime = 'morning' | 'day' | 'evening';
+
 export interface UserProfile {
   name: string | null;
   goals: UserGoal[];
   currentNeed: CurrentNeed | null;
   tone: SupportTone | null;
+  supportTimes: SupportTime[];
   onboardingCompleted: boolean;
   createdAt: number;
 }
