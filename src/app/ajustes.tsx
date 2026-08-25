@@ -1,5 +1,6 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ function formatTime(hour: number, minute: number): string {
 }
 
 export default function AjustesScreen() {
+  const router = useRouter();
   const { settings, permissionDenied, setEnabled, setTime } = useSettings();
   const { prefs, fonts } = useTheme();
   const [showIosPicker, setShowIosPicker] = useState(false);
@@ -50,9 +52,14 @@ export default function AjustesScreen() {
   return (
     <GradientBackground>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.8}>
+            <Ionicons name="chevron-back" size={22} color={COLORS.textLight} />
+          </TouchableOpacity>
           <Text style={[styles.heading, { fontFamily: fonts.serifSemiBold }]}>Ajustes</Text>
+        </View>
 
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.sectionLabel}>Notificaciones</Text>
 
           <View style={styles.row}>
@@ -148,10 +155,23 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 20,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.chipInactiveBg,
+  },
   heading: {
     fontSize: 30,
     color: COLORS.textLight,
-    marginBottom: 24,
   },
   sectionLabel: {
     color: COLORS.textMuted,

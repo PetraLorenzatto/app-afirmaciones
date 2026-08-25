@@ -50,3 +50,55 @@ export interface ThemePrefs {
   gradient: GradientKey;
   font: FontKey;
 }
+
+// ---- V2: perfil de usuario y registro diario ----
+
+export type UserGoal =
+  | 'amor_propio'
+  | 'confianza'
+  | 'disciplina'
+  | 'calma'
+  | 'proposito'
+  | 'estudio_carrera'
+  | 'finanzas'
+  | 'bienestar_movimiento'
+  | 'relaciones'
+  | 'disfrutar';
+
+export type CurrentNeed =
+  | 'tranquilidad'
+  | 'motivacion'
+  | 'claridad'
+  | 'confianza'
+  | 'energia'
+  | 'contencion'
+  | 'constancia'
+  | 'general';
+
+export type SupportTone = 'suave' | 'positiva' | 'directa' | 'reflexiva';
+
+export interface UserProfile {
+  name: string | null;
+  goals: UserGoal[];
+  currentNeed: CurrentNeed | null;
+  tone: SupportTone | null;
+  onboardingCompleted: boolean;
+  createdAt: number;
+}
+
+export type Mood = 'very_low' | 'low' | 'neutral' | 'good' | 'great';
+
+export interface DailyEntry {
+  id: string;
+  date: string;
+  morningMood: Mood | null;
+  eveningMood: Mood | null;
+  affirmationText: string | null;
+  microActionText: string | null;
+  microActionAccepted: boolean;
+  microActionCompleted: boolean;
+  reflection: string | null;
+  gratitude: string | null;
+  createdAt: number;
+  updatedAt: number;
+}

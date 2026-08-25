@@ -35,6 +35,7 @@ export default function RootLayout() {
               <StatusBar style="light" />
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: SUNRISE_GRADIENT[0] } }}>
                 <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="ajustes" options={{ presentation: 'card' }} />
               </Stack>
             </JournalProvider>
           </StreakProvider>

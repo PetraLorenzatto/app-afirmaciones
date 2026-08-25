@@ -25,22 +25,22 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="guardadas"
         options={{
-          title: 'Guardadas',
+          title: 'Para mí',
           tabBarIcon: ({ color, size }) => <Ionicons name="bookmark" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="diario"
         options={{
-          title: 'Diario',
+          title: 'Mi espacio',
           tabBarIcon: ({ color, size }) => <Ionicons name="book" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="ajustes"
+        name="perfil"
         options={{
-          title: 'Ajustes',
-          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+          title: 'Perfil',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />
     </Tabs>
