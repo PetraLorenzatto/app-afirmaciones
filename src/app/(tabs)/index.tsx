@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View, type ViewToken } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,10 @@ import { useAffirmationFeed } from '@/hooks/useAffirmationFeed';
 import { COLORS } from '@/theme/colors';
 import type { Category } from '@/types';
 
+// Objeto estático: se define una sola vez a nivel de módulo (no hace falta un ref)
+// para que FlatList reciba siempre la misma referencia entre renders.
+const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 90 };
+
 export default function HoyScreen() {
   const [category, setCategory] = useState<Category>('calma');
   const [menuVisible, setMenuVisible] = useState(false);
@@ -28,13 +32,21 @@ export default function HoyScreen() {
   const insets = useSafeAreaInsets();
   const shareViewRef = useRef<View>(null);
 
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 90 }).current;
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+  // FlatList no soporta que onViewableItemsChanged cambie de identidad entre renders, así
+  // que necesita quedar estable durante toda la vida del componente. Por eso se guarda la
+  // versión más reciente de markRead en un ref (actualizado en un efecto, no durante el
+  // render) y se la lee recién adentro del callback, cuando FlatList lo invoca.
+  const markReadRef = useRef(markRead);
+  useEffect(() => {
+    markReadRef.current = markRead;
+  }, [markRead]);
+
+  const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const first = viewableItems[0];
     if (first?.isViewable && typeof first.item === 'string') {
-      markRead(first.item);
+      markReadRef.current(first.item);
     }
-  }).current;
+  }, []);
 
   useEffect(() => {
     if (!shareText) return;
@@ -85,7 +97,7 @@ export default function HoyScreen() {
             showsVerticalScrollIndicator={false}
             snapToInterval={pageHeight}
             decelerationRate="fast"
-            viewabilityConfig={viewabilityConfig}
+            viewabilityConfig={VIEWABILITY_CONFIG}
             onViewableItemsChanged={onViewableItemsChanged}
             getItemLayout={(_, index) => ({ length: pageHeight, offset: pageHeight * index, index })}
             renderItem={({ item }) => (
@@ -132,6 +144,10 @@ function HeartButton({ active, onPress }: { active: boolean; onPress: () => void
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const handlePress = () => {
+    // react-native-reanimated: asignar `.value` es la API prevista para mutar un shared
+    // value desde un event handler (corre en el hilo de UI, no es estado de React); el
+    // lint de reglas de hooks todavía no reconoce ese patrón como seguro.
+    // eslint-disable-next-line react-hooks/immutability
     scale.value = withSequence(withTiming(1.3, { duration: 120 }), withTiming(1, { duration: 120 }));
     onPress();
   };

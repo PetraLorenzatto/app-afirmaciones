@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { CategoryPicker } from '@/components/CategoryPicker';
@@ -19,12 +19,19 @@ export function EditAffirmationModal({
   const [text, setText] = useState('');
   const [category, setCategory] = useState<Category>('amor');
 
-  useEffect(() => {
+  // Ajusta el estado local cuando cambia el item a editar, siguiendo el patrón que React
+  // recomienda para esto (react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes):
+  // comparar durante el render en vez de sincronizar en un efecto aparte. `syncedItem` deja
+  // registro de qué item ya se reflejó en el estado local; null también cuenta como cambio,
+  // así que reabrir el modal con el mismo item vuelve a traer su texto/categoría guardados.
+  const [syncedItem, setSyncedItem] = useState<SavedAffirmation | null>(null);
+  if (item !== syncedItem) {
+    setSyncedItem(item);
     if (item) {
       setText(item.text);
       setCategory(item.category);
     }
-  }, [item]);
+  }
 
   const handleSave = () => {
     if (!item || !text.trim()) return;
