@@ -29,9 +29,13 @@ function scoreItem(item: Taggable, params: TodaySelectionParams): number {
   return score;
 }
 
-/** Entre los de mejor puntaje, elige al azar (evita mostrar siempre lo mismo). Nunca vacío. */
-function pickBestScored<T extends Taggable>(items: T[], params: TodaySelectionParams, exclude?: string): T {
-  const pool = exclude ? items.filter((item) => item.text !== exclude) : items;
+/**
+ * Entre los de mejor puntaje, elige al azar (evita mostrar siempre lo mismo). `exclude` saca
+ * del pool los textos ya usados; si eso deja el pool vacío (se agotaron las alternativas),
+ * se cae de vuelta a considerar todos, así nunca devuelve nada. Nunca vacío.
+ */
+function pickBestScored<T extends Taggable>(items: T[], params: TodaySelectionParams, exclude: string[] = []): T {
+  const pool = exclude.length > 0 ? items.filter((item) => !exclude.includes(item.text)) : items;
   const candidates = pool.length > 0 ? pool : items;
 
   const scored = candidates.map((item) => ({ item, score: scoreItem(item, params) }));
@@ -45,7 +49,7 @@ export function selectAffirmation(params: TodaySelectionParams) {
   return pickBestScored(TODAY_AFFIRMATIONS, params);
 }
 
-/** `excludeText` evita repetir el texto actual al pedir "Dame otro", cuando hay alternativa. */
-export function selectMicroAction(params: TodaySelectionParams, excludeText?: string) {
-  return pickBestScored(TODAY_MICRO_ACTIONS, params, excludeText);
+/** `excludeTexts` evita repetir microacciones ya mostradas hoy al pedir "Otro paso", mientras haya alternativas. */
+export function selectMicroAction(params: TodaySelectionParams, excludeTexts: string[] = []) {
+  return pickBestScored(TODAY_MICRO_ACTIONS, params, excludeTexts);
 }

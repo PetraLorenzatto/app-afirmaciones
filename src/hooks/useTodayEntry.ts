@@ -33,11 +33,17 @@ function createEmptyEntry(date: string): DailyEntry {
 export function useTodayEntry(profile: UserProfile) {
   const [entry, setEntry] = useState<DailyEntry | null>(null);
   const [loading, setLoading] = useState(true);
+  // Microacciones ya mostradas hoy (en esta sesión), para que "Otro paso" no repita
+  // mientras queden alternativas. En memoria nada más: se resetea si se reabre la app al
+  // día siguiente (nueva sesión) o al usar "Reiniciar el día".
+  const [shownMicroActions, setShownMicroActions] = useState<string[]>([]);
 
   useEffect(() => {
     const date = todayDateString();
     loadDailyEntries().then((entries) => {
-      setEntry(entries.find((item) => item.date === date) ?? null);
+      const found = entries.find((item) => item.date === date) ?? null;
+      setEntry(found);
+      setShownMicroActions(found?.microActionText ? [found.microActionText] : []);
       setLoading(false);
     });
   }, []);
@@ -54,6 +60,7 @@ export function useTodayEntry(profile: UserProfile) {
       const params = { goals: profile.goals, currentNeed: profile.currentNeed, tone: profile.tone, mood };
       const affirmation = selectAffirmation(params);
       const microAction = selectMicroAction(params);
+      setShownMicroActions([microAction.text]);
       await persist({
         ...base,
         morningMood: mood,
@@ -71,15 +78,16 @@ export function useTodayEntry(profile: UserProfile) {
 
     const microAction = selectMicroAction(
       { goals: profile.goals, currentNeed: profile.currentNeed, tone: profile.tone, mood: entry.morningMood },
-      entry.microActionText ?? undefined
+      shownMicroActions
     );
+    setShownMicroActions((current) => (current.includes(microAction.text) ? current : [...current, microAction.text]));
     await persist({
       ...entry,
       microActionText: microAction.text,
       microActionRerollCount: entry.microActionRerollCount + 1,
       updatedAt: Date.now(),
     });
-  }, [entry, profile, persist]);
+  }, [entry, profile, persist, shownMicroActions]);
 
   const commit = useCallback(async () => {
     if (!entry) return;
@@ -95,6 +103,7 @@ export function useTodayEntry(profile: UserProfile) {
   const resetToday = useCallback(async () => {
     await deleteDailyEntry(todayDateString());
     setEntry(null);
+    setShownMicroActions([]);
   }, []);
 
   return { entry, loading, checkIn, rerollMicroAction, commit, complete, resetToday };

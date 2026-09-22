@@ -1,8 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+  ZoomIn,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GradientBackground } from '@/components/GradientBackground';
@@ -21,6 +29,10 @@ import { getGreeting } from '@/utils/greeting';
 
 type Phase = 'checkin' | 'today' | 'committed' | 'completed';
 
+// Sprint 2C: el cierre nocturno todavía no tiene lógica. Este flag deja el espacio
+// preparado en la UI (ver más abajo) sin mostrar nada ni comprometerse a un comportamiento.
+const NIGHT_CLOSE_ENABLED = false;
+
 function getPhase(entry: DailyEntry | null): Phase {
   if (!entry || entry.morningMood === null) return 'checkin';
   if (entry.microActionCompleted) return 'completed';
@@ -29,6 +41,7 @@ function getPhase(entry: DailyEntry | null): Phase {
 }
 
 export default function HoyScreen() {
+  const router = useRouter();
   const { profile } = useUserProfile();
   const { entry, loading, checkIn, rerollMicroAction, commit, complete, resetToday } = useTodayEntry(profile);
   const { toggleFavorite, isSaved } = useSavedAffirmations();
@@ -77,14 +90,25 @@ export default function HoyScreen() {
     <GradientBackground>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
-          <Text style={[styles.greeting, { fontFamily: fonts.serifSemiBold }]}>{getGreeting(profile.name)}</Text>
+          <Text
+            style={[
+              phase === 'checkin' ? styles.greeting : styles.greetingSecondary,
+              { fontFamily: phase === 'checkin' ? fonts.serifSemiBold : fonts.serif },
+            ]}>
+            {getGreeting(profile.name)}
+          </Text>
           <StreakBadge />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {phase === 'checkin' && (
             <Animated.View entering={FadeIn.duration(300)} style={styles.checkinWrapper}>
-              <Text style={[styles.question, { fontFamily: fonts.serifSemiBold }]}>¿Cómo llegás hoy?</Text>
+              <View style={styles.checkinTextGroup}>
+                <Text style={[styles.checkinIntro, { fontFamily: fonts.serifItalic }]}>
+                  Antes de empezar, contame algo...
+                </Text>
+                <Text style={[styles.question, { fontFamily: fonts.serifSemiBold }]}>¿Cómo llegás hoy?</Text>
+              </View>
               <MoodPicker onSelect={checkIn} />
             </Animated.View>
           )}
@@ -109,17 +133,25 @@ export default function HoyScreen() {
                       <Ionicons name="share-outline" size={24} color={COLORS.textLight} />
                     </TouchableOpacity>
                   </View>
+                  {phase !== 'completed' && (
+                    <TouchableOpacity
+                      onPress={() => router.push('/afirmaciones')}
+                      activeOpacity={0.7}
+                      style={styles.moreAffirmationsLink}>
+                      <Text style={styles.moreAffirmationsText}>Ver más afirmaciones</Text>
+                    </TouchableOpacity>
+                  )}
                 </Animated.View>
               )}
 
               {phase === 'today' && microActionText && (
                 <Animated.View entering={FadeIn.duration(400).delay(150)} style={styles.microActionCard}>
-                  <Text style={styles.sectionLabel}>Un pequeño paso</Text>
+                  <Text style={styles.sectionLabel}>🌱 Tu pequeño paso</Text>
                   <Text style={styles.microActionText}>{microActionText}</Text>
                   <PrimaryButton label="Me comprometo" onPress={commit} />
                   {canReroll && (
                     <TouchableOpacity onPress={rerollMicroAction} activeOpacity={0.7} style={styles.rerollButton}>
-                      <Text style={styles.rerollText}>Dame otro</Text>
+                      <Text style={styles.rerollText}>↻ Otro paso</Text>
                     </TouchableOpacity>
                   )}
                 </Animated.View>
@@ -136,15 +168,29 @@ export default function HoyScreen() {
 
               {phase === 'completed' && microActionText && (
                 <Animated.View entering={FadeIn.duration(400).delay(150)} style={styles.microActionCard}>
-                  <Text style={styles.doneText}>Pequeño paso completado ✓</Text>
+                  <Animated.Text entering={ZoomIn.duration(350)} style={styles.doneText}>
+                    ✓ Lo hiciste.
+                  </Animated.Text>
+                  <Text style={styles.doneSubtext}>Hoy cumpliste algo que elegiste para vos.</Text>
                   <Text style={styles.microActionText}>{microActionText}</Text>
-                  <Text style={styles.confirmationText}>Hecho por hoy ✨</Text>
+                  <Text style={styles.confirmationText}>🌱 1 pequeño paso suma.</Text>
+
+                  <PrimaryButton label="✨ Seguir con afirmaciones" onPress={() => router.push('/afirmaciones')} />
+
+                  {/* Sprint 2C: acá va a ir el cierre nocturno. Todavía sin lógica. */}
+                  {NIGHT_CLOSE_ENABLED && (
+                    <TouchableOpacity activeOpacity={0.8} style={styles.nightCloseButton}>
+                      <Text style={styles.nightCloseText}>🌙 Cerrar mi día</Text>
+                    </TouchableOpacity>
+                  )}
                 </Animated.View>
               )}
 
-              <TouchableOpacity onPress={resetToday} activeOpacity={0.7} style={styles.devResetButton}>
-                <Text style={styles.devResetText}>🔧 Reiniciar el día (dev)</Text>
-              </TouchableOpacity>
+              {__DEV__ && (
+                <TouchableOpacity onPress={resetToday} activeOpacity={0.7} style={styles.devResetButton}>
+                  <Text style={styles.devResetText}>🔧 Reiniciar el día (dev)</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </ScrollView>
@@ -203,6 +249,12 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     paddingRight: 12,
   },
+  greetingSecondary: {
+    fontSize: 15,
+    color: COLORS.textMuted,
+    flexShrink: 1,
+    paddingRight: 12,
+  },
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
@@ -212,6 +264,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 28,
     paddingBottom: 60,
+  },
+  checkinTextGroup: {
+    gap: 8,
+  },
+  checkinIntro: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    textAlign: 'center',
   },
   question: {
     fontSize: 24,
@@ -253,6 +313,15 @@ const styles = StyleSheet.create({
   },
   heartButton: {},
   shareButton: {},
+  moreAffirmationsLink: {
+    marginTop: 16,
+  },
+  moreAffirmationsText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
   microActionCard: {
     backgroundColor: COLORS.chipInactiveBg,
     borderRadius: 24,
@@ -271,8 +340,13 @@ const styles = StyleSheet.create({
   },
   doneText: {
     color: COLORS.gold,
-    fontSize: 15,
+    fontSize: 19,
     fontWeight: '700',
+  },
+  doneSubtext: {
+    color: COLORS.textLight,
+    fontSize: 14,
+    marginTop: -6,
   },
   confirmationText: {
     color: COLORS.textMuted,
@@ -287,6 +361,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     textDecorationLine: 'underline',
+  },
+  nightCloseButton: {
+    alignSelf: 'center',
+    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: COLORS.chipActiveBg,
+  },
+  nightCloseText: {
+    color: COLORS.chipActiveText,
+    fontSize: 14,
+    fontWeight: '700',
   },
   offscreenCapture: {
     position: 'absolute',

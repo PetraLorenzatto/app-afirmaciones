@@ -5,10 +5,10 @@ import type { Mood } from '@/types';
 
 const MOOD_OPTIONS: { key: Mood; emoji: string; label: string }[] = [
   { key: 'very_low', emoji: '😞', label: 'Muy mal' },
-  { key: 'low', emoji: '😕', label: 'Bajo/a' },
-  { key: 'neutral', emoji: '😐', label: 'Neutral' },
+  { key: 'low', emoji: '😕', label: 'No muy bien' },
+  { key: 'neutral', emoji: '😐', label: 'Normal' },
   { key: 'good', emoji: '🙂', label: 'Bien' },
-  { key: 'great', emoji: '🔥', label: 'Muy bien' },
+  { key: 'great', emoji: '🔥', label: 'Genial' },
 ];
 
 export function MoodPicker({ onSelect }: { onSelect: (mood: Mood) => void }) {
