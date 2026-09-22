@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { loadDailyEntries, upsertDailyEntry } from '@/storage/dailyEntries';
+import { deleteDailyEntry, loadDailyEntries, upsertDailyEntry } from '@/storage/dailyEntries';
 import { todayDateString } from '@/storage/streak';
 import type { DailyEntry, Mood, UserProfile } from '@/types';
 import { selectAffirmation, selectMicroAction } from '@/utils/selectTodayContent';
@@ -91,5 +91,11 @@ export function useTodayEntry(profile: UserProfile) {
     await persist({ ...entry, microActionCompleted: true, updatedAt: Date.now() });
   }, [entry, persist]);
 
-  return { entry, loading, checkIn, rerollMicroAction, commit, complete };
+  /** Herramienta temporal de desarrollo: borra la entrada de hoy para repetir el flujo sin esperar al día siguiente. */
+  const resetToday = useCallback(async () => {
+    await deleteDailyEntry(todayDateString());
+    setEntry(null);
+  }, []);
+
+  return { entry, loading, checkIn, rerollMicroAction, commit, complete, resetToday };
 }

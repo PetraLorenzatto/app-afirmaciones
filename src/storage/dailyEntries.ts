@@ -29,3 +29,8 @@ export async function upsertDailyEntry(entry: DailyEntry): Promise<DailyEntry[]>
   await persistDailyEntries(next);
   return next;
 }
+
+export async function deleteDailyEntry(id: string): Promise<void> {
+  const current = await loadDailyEntries();
+  await persistDailyEntries(current.filter((item) => item.id !== id));
+}

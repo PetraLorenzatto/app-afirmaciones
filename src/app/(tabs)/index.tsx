@@ -30,7 +30,7 @@ function getPhase(entry: DailyEntry | null): Phase {
 
 export default function HoyScreen() {
   const { profile } = useUserProfile();
-  const { entry, loading, checkIn, rerollMicroAction, commit, complete } = useTodayEntry(profile);
+  const { entry, loading, checkIn, rerollMicroAction, commit, complete, resetToday } = useTodayEntry(profile);
   const { toggleFavorite, isSaved } = useSavedAffirmations();
   const { fonts } = useTheme();
   const [shareText, setShareText] = useState<string | null>(null);
@@ -141,6 +141,10 @@ export default function HoyScreen() {
                   <Text style={styles.confirmationText}>Hecho por hoy ✨</Text>
                 </Animated.View>
               )}
+
+              <TouchableOpacity onPress={resetToday} activeOpacity={0.7} style={styles.devResetButton}>
+                <Text style={styles.devResetText}>🔧 Reiniciar el día (dev)</Text>
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>
@@ -288,5 +292,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: -9999,
     top: 0,
+  },
+  devResetButton: {
+    alignSelf: 'center',
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.danger,
+  },
+  devResetText: {
+    color: COLORS.danger,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
