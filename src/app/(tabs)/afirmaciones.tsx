@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View, type ViewToken } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +12,7 @@ import { StreakBadge } from '@/components/StreakBadge';
 import { useSavedAffirmations } from '@/context/SavedAffirmationsContext';
 import { useStreak } from '@/context/StreakContext';
 import { useTheme } from '@/context/ThemeContext';
+import { CATEGORIES } from '@/data/affirmations';
 import { useAffirmationFeed } from '@/hooks/useAffirmationFeed';
 import { COLORS } from '@/theme/colors';
 import type { Category } from '@/types';
@@ -23,12 +23,14 @@ const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 90 };
 
 /**
  * Es el feed de afirmaciones original (por categoría, con scroll), disponible aparte de
- * "Hoy" para seguir leyendo libremente. Entrar/salir de acá no toca nada del estado del
- * día (mood, afirmación principal, microacción, accepted/completed) — vive todo en Hoy,
- * esta pantalla es puramente de lectura/exploración.
+ * "Hoy" para seguir leyendo libremente. Vive dentro de (tabs) como pestaña oculta (ver
+ * (tabs)/_layout.tsx, href: null) para que la tab bar de la app siga visible acá — no hace
+ * falta una flecha de "volver" porque tocar "Hoy" en esa misma barra ya cumple esa función.
+ * Entrar/salir de acá no toca nada del estado del día (mood, afirmación principal,
+ * microacción, accepted/completed) — vive todo en Hoy, esta pantalla es puramente de
+ * lectura/exploración.
  */
 export default function AfirmacionesScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<Category>('calma');
   const [menuVisible, setMenuVisible] = useState(false);
@@ -39,6 +41,10 @@ export default function AfirmacionesScreen() {
   const { fonts } = useTheme();
   const feed = useAffirmationFeed(category, saved);
   const shareViewRef = useRef<View>(null);
+  const categoryLabel = useMemo(
+    () => CATEGORIES.find((item) => item.key === category)?.label ?? '',
+    [category]
+  );
 
   // FlatList no soporta que onViewableItemsChanged cambie de identidad entre renders, así
   // que necesita quedar estable durante toda la vida del componente. Por eso se guarda la
@@ -84,22 +90,15 @@ export default function AfirmacionesScreen() {
       <SafeAreaView
         style={styles.safeArea}
         onLayout={(event) => setPageHeight(event.nativeEvent.layout.height)}>
-        <TouchableOpacity
-          style={[styles.backButton, { top: insets.top + 12 }]}
-          onPress={() => router.back()}
-          activeOpacity={0.8}>
-          <Ionicons name="chevron-back" size={22} color={COLORS.textLight} />
-        </TouchableOpacity>
-
         <View style={[styles.streakBadgeWrapper, { top: insets.top + 12 }]}>
           <StreakBadge />
         </View>
 
         <TouchableOpacity
-          style={[styles.menuButton, { top: insets.top + 12 }]}
+          style={[styles.categoryButton, { top: insets.top + 12 }]}
           onPress={() => setMenuVisible(true)}
           activeOpacity={0.8}>
-          <Ionicons name="apps-outline" size={20} color={COLORS.textLight} />
+          <Text style={styles.categoryButtonText}>{categoryLabel} ▾</Text>
         </TouchableOpacity>
 
         {pageHeight > 0 && (
@@ -184,32 +183,26 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  backButton: {
+  streakBadgeWrapper: {
     position: 'absolute',
     left: 20,
     zIndex: 10,
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(251, 243, 230, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  streakBadgeWrapper: {
-    position: 'absolute',
-    left: 72,
-    zIndex: 10,
-  },
-  menuButton: {
+  categoryButton: {
     position: 'absolute',
     right: 20,
     zIndex: 10,
-    width: 42,
     height: 42,
+    paddingHorizontal: 16,
     borderRadius: 21,
     backgroundColor: 'rgba(251, 243, 230, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  categoryButtonText: {
+    color: COLORS.textLight,
+    fontSize: 13,
+    fontWeight: '600',
   },
   page: {
     justifyContent: 'center',

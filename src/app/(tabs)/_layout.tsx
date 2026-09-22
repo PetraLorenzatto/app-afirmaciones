@@ -43,6 +43,15 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="afirmaciones"
+        options={{
+          // No tiene botón propio en la barra: se llega por un link desde Hoy, pero al
+          // vivir en este mismo Tabs, la barra (Hoy/Para mí/Mi espacio/Perfil) se mantiene
+          // visible y tocar "Hoy" alcanza para volver, sin necesidad de una flecha atrás.
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

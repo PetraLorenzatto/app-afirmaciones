@@ -60,7 +60,6 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
       <Stack.Screen name="(onboarding)" redirect={profile.onboardingCompleted} />
       <Stack.Screen name="(tabs)" redirect={!profile.onboardingCompleted} />
       <Stack.Screen name="ajustes" options={{ presentation: 'card' }} />
-      <Stack.Screen name="afirmaciones" options={{ presentation: 'card' }} />
     </Stack>
   );
 }
