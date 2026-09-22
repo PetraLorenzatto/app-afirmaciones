@@ -4,6 +4,7 @@ import { AFFIRMATIONS } from '@/data/affirmations';
 import { pickForDate } from '@/hooks/useAffirmationOfTheDay';
 import {
   cancelDailyAffirmationNotification,
+  isNotificationsAvailable,
   requestNotificationPermissions,
   scheduleDailyAffirmationNotification,
 } from '@/notifications/scheduleDaily';
@@ -14,6 +15,8 @@ interface SettingsContextValue {
   settings: NotificationSettings;
   loading: boolean;
   permissionDenied: boolean;
+  /** false en Expo Go para Android (SDK 53+): ahí hace falta un development build. */
+  notificationsAvailable: boolean;
   setEnabled: (enabled: boolean) => Promise<void>;
   setTime: (hour: number, minute: number) => Promise<void>;
 }
@@ -42,6 +45,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const setEnabled = async (enabled: boolean) => {
     if (enabled) {
+      if (!isNotificationsAvailable()) return;
       const granted = await requestNotificationPermissions();
       if (!granted) {
         setPermissionDenied(true);
@@ -67,7 +71,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, loading, permissionDenied, setEnabled, setTime }}>
+    <SettingsContext.Provider
+      value={{
+        settings,
+        loading,
+        permissionDenied,
+        notificationsAvailable: isNotificationsAvailable(),
+        setEnabled,
+        setTime,
+      }}>
       {children}
     </SettingsContext.Provider>
   );

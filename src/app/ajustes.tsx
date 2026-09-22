@@ -20,7 +20,7 @@ function formatTime(hour: number, minute: number): string {
 
 export default function AjustesScreen() {
   const router = useRouter();
-  const { settings, permissionDenied, setEnabled, setTime } = useSettings();
+  const { settings, permissionDenied, notificationsAvailable, setEnabled, setTime } = useSettings();
   const { prefs, fonts } = useTheme();
   const [showIosPicker, setShowIosPicker] = useState(false);
   const [gradientPickerVisible, setGradientPickerVisible] = useState(false);
@@ -70,12 +70,20 @@ export default function AjustesScreen() {
             <Switch
               value={settings.enabled}
               onValueChange={setEnabled}
+              disabled={!notificationsAvailable}
               trackColor={{ false: COLORS.chipInactiveBg, true: COLORS.chipActiveBg }}
               thumbColor={COLORS.textLight}
             />
           </View>
 
-          {permissionDenied && (
+          {!notificationsAvailable && (
+            <Text style={styles.warning}>
+              Las notificaciones no están disponibles probando desde Expo Go en Android — vas a
+              poder activarlas cuando la app se instale como build final.
+            </Text>
+          )}
+
+          {notificationsAvailable && permissionDenied && (
             <Text style={styles.warning}>
               No pudimos activar las notificaciones porque el permiso fue rechazado. Activalo desde
               los ajustes del sistema para tu celular.
