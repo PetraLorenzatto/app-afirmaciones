@@ -100,6 +100,8 @@ export interface DailyEntry {
   microActionText: string | null;
   microActionAccepted: boolean;
   microActionCompleted: boolean;
+  /** Cuántas veces se pidió "Dame otro" hoy (para limitar el reroll a un máximo por día). */
+  microActionRerollCount: number;
   reflection: string | null;
   gratitude: string | null;
   createdAt: number;
